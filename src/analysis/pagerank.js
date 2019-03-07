@@ -37,7 +37,7 @@ export type PagerankOptions = {|
 export type {EdgeWeight} from "../core/attribution/graphToMarkovChain";
 export type EdgeEvaluator = (Edge) => EdgeWeight;
 
-function defaultOptions(): PagerankOptions {
+export function defaultOptions(): PagerankOptions {
   return {
     verbose: false,
     selfLoopWeight: DEFAULT_SYNTHETIC_LOOP_WEIGHT,
