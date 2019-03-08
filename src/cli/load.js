@@ -135,23 +135,33 @@ const loadDefaultPlugins = async ({std, output, repoIds}) => {
     return die(std, "no GitHub token specified");
   }
 
+  const sourcecredCmd = (args) => [
+    process.execPath,
+    "--max_old_space_size=8192",
+    process.argv[1],
+    ...args,
+  ];
+
   const tasks = [
     ...Common.defaultPlugins().map((pluginName) => ({
       id: `load-${pluginName}`,
-      cmd: [
-        process.execPath,
-        "--max_old_space_size=8192",
-        process.argv[1],
+      cmd: sourcecredCmd([
         "load",
         ...repoIds.map((repoId) => repoIdToString(repoId)),
         "--output",
         repoIdToString(output),
         "--plugin",
         pluginName,
-      ],
+      ]),
       deps: [],
     })),
   ];
+  const pagerankTask = {
+    id: "pagerank",
+    cmd: sourcecredCmd(["pagerank", repoIdToString(output)]),
+    deps: tasks.map((x) => x.id),
+  };
+  tasks.push(pagerankTask);
 
   const {success} = await execDependencyGraph(tasks, {taskPassLabel: "DONE"});
   if (success) {

@@ -350,14 +350,16 @@ describe("cli/load", () => {
         });
         expect(execDependencyGraph).toHaveBeenCalledTimes(1);
         const tasks = execDependencyGraph.mock.calls[0][0];
-        expect(tasks).toHaveLength(["git", "github"].length);
+        expect(tasks).toHaveLength(["git", "github", "pagerank"].length);
         expect(tasks.map((task) => task.id)).toEqual(
           expect.arrayContaining([
             expect.stringMatching(/git(?!hub)/),
             expect.stringMatching(/github/),
+            expect.stringMatching(/pagerank/),
           ])
         );
-        for (const task of tasks) {
+        const loadTasks = tasks.slice(0, tasks.length - 1);
+        for (const task of loadTasks) {
           expect(task.cmd).toEqual([
             expect.stringMatching(/\bnode\b/),
             expect.stringMatching(/--max_old_space_size=/),
@@ -371,6 +373,16 @@ describe("cli/load", () => {
             expect.stringMatching(/^(?:git|github)$/),
           ]);
         }
+        const pagerankTask = tasks[tasks.length - 1];
+        expect(pagerankTask.cmd).toEqual([
+          expect.stringMatching(/\bnode\b/),
+          expect.stringMatching(/--max_old_space_size=/),
+          process.argv[1],
+          "pagerank",
+          "foo/combined",
+        ]);
+        expect(pagerankTask.deps).toEqual(loadTasks.map((x) => x.id));
+        expect(pagerankTask.id).toEqual("pagerank");
       });
 
       it("properly infers the output when loading a single repository", async () => {
@@ -382,7 +394,8 @@ describe("cli/load", () => {
         });
         expect(execDependencyGraph).toHaveBeenCalledTimes(1);
         const tasks = execDependencyGraph.mock.calls[0][0];
-        for (const task of tasks) {
+        const loadTasks = tasks.slice(0, tasks.length - 1);
+        for (const task of loadTasks) {
           expect(task.cmd).toEqual([
             expect.stringMatching(/\bnode\b/),
             expect.stringMatching(/--max_old_space_size=/),
@@ -395,6 +408,16 @@ describe("cli/load", () => {
             expect.stringMatching(/^(?:git|github)$/),
           ]);
         }
+        const pagerankTask = tasks[tasks.length - 1];
+        expect(pagerankTask.cmd).toEqual([
+          expect.stringMatching(/\bnode\b/),
+          expect.stringMatching(/--max_old_space_size=/),
+          process.argv[1],
+          "pagerank",
+          "foo/bar",
+        ]);
+        expect(pagerankTask.deps).toEqual(loadTasks.map((x) => x.id));
+        expect(pagerankTask.id).toEqual("pagerank");
       });
 
       it("fails if `execDependencyGraph` returns failure", async () => {
